@@ -1,4 +1,4 @@
-# sfml-nuget
+# sfml-nuget_builder
 Create NuGet's package for SFML.
 
 # Prerequisite
@@ -7,9 +7,17 @@ Create NuGet's package for SFML.
 
 # How to
 
-You just have to run the sfml-nuget.ps1 script in a powershell instance.
+You just have to run the sfml-nuget.ps1 script in a PowerShell instance.
 It will download each needed files and output nupkg files in the "repository" folder.
 
-Optional :
-You may want to modify some variables to select the sfml version, generate only specific modules, etc... (You should know what your are doing, I won't answer any question about custom packages).
-You can remove the "delete.me" file from the sfml-system-[version].nupkg archive (located at \build\native\include\)
+# Customization
+
+You can customize packages by changing this params:
+- `$pkg_prefix` to change packages' names **(Don't remove the reference to the SFML)**
+- `$pkg_owner` to change packages' owner
+- `pkg_tags` to customize tags
+- `$pkg_clear_sources` to keep or delete source files
+
+### Optional :
+You can modify some variables to select the SFML version, generate only specific modules, etc...
+**You should know what your are changing!**

@@ -1,14 +1,21 @@
 ﻿#
 # sfml-nuget.ps1
 #
+
+#Package customisation vars
+$pkg_prefix = "sfml-" # If you change this, do not remove the reference to SFML
+$pkg_owner = "username" # Replace username with your name
+$pkg_tags = "sfml, native, CoApp" # Tags for your packages
+$pkg_clear_sources = $false; # Use $true to delete source files or $false to keep them
+
 # SFML nuget packages generation variable
-$sfml_module_list = "system", "window", "graphics", "audio", "network"
-$sfml_dowbload_url = "http://www.sfml-dev.org/files/"
-$sfml_msvc_versions = "vc11", "vc12", "vc14"
+$sfml_module_list = "system", "window", "graphics", "audio", "network" # SFML packages
+$sfml_download_url = "http://www.sfml-dev.org/files/"
+$sfml_msvc_versions = "vc12", "vc14", "vc15"
 $sfml_platforms_bits = "32", "64"
-$sfml_version = "2.4.2"
+$sfml_version = "2.5.0"
 $platforms = "x86", "x64"
-$toolchains = "v110", "v120", "v140", "v141"
+$toolchains = "v120", "v140", "v141"
 $configurations = "debug", "release"
 $linking = "static", "dynamic"
 $dependencies = @{}
@@ -19,7 +26,7 @@ $dependencies.Add("network", "system")
 
 # SFML Packages variables
 $sfml_authors = "Laurent Gomila"
-$sfml_owners =  "Laurent Gomila"
+$sfml_owners =  "$pkg_owner"
 $sfml_licence_url = "http://www.sfml-dev.org/license.php"
 $sfml_project_url = "http://www.sfml-dev.org"
 $sfml_icon_url = "http://www.sfml-dev.org/images/sfml-icon.png"
@@ -35,7 +42,7 @@ $sfml_description = "SFML provides a simple interface to the various components
         SFML has official bindings for the C and .Net languages. And thanks to its
 		active community, it is also available in many other languages such as Java,
 		Ruby, Python, Go, and more."
-
+$sfml_changelog = "https://www.sfml-dev.org/changelog.php#sfml-$sfml_version"
 $scriptpath = $MyInvocation.MyCommand.Path
 $dir = Split-Path $scriptpath
 
@@ -46,26 +53,26 @@ function PackageHeader($pkgName)
 	UserPlatformToolset {
 	    // Needed because autopackage lacks VS2015 support
         	key = ""PlatformToolset"";
-        	choices: ""v100,v110,v120,v140,v141"";
+        	choices: ""v120,v140,v141"";
 	};
 }
 
 nuget {
 	nuspec {
-		id = sfml-$pkgname;
-		title: sfml-$pkgname;
-		version: $sfml_version.0;
+		id = $pkg_prefix$pkgname;
+		title: $pkg_prefix$pkgname;
+		version: $sfml_version;
 		authors: { $sfml_authors };
 		owners: { $sfml_owners };
 		licenseUrl: ""$sfml_licence_url"";
 		projectUrl: ""$sfml_project_url"";
 		iconUrl: ""$sfml_icon_url"";
-		requireLicenseAcceptance:$sfml_require_license_acceptance;
+		requireLicenseAcceptance: $sfml_require_license_acceptance;
 		summary: ""$sfml_summary"";
 		description: @""$sfml_description"";
-		releaseNotes: ""Release of SFML $sfml_version libraries"";
+		releaseNotes: ""$sfml_changelog"";
 		copyright: Copyright $currentYear;
-		tags: { sfml, native, CoApp };
+		tags: ""$pkg_tags"";
 	}
 	
 	#output-packages {
@@ -82,14 +89,10 @@ function AddMainFile()
 	{
 		foreach($v in $toolchains)
 		{
-			$v1=$v
-            if($v -eq 'v141'){
-                $v1='v140'
-            }
 			foreach($c in $configurations)
 			{
 					$datas += "		[$p,$v,$c] {"
-					$libfile = "			lib += `${SRC}bin\$p\$v1\$c\lib\sfml-main"
+					$libfile = "			lib += `${SRC}bin\$p\$v\$c\lib\sfml-main"
 					if ($c -eq "debug")
 					{
 						$libfile += "-d"
@@ -113,17 +116,13 @@ function AddFiles($pkgName)
 	{
 		foreach($v in $toolchains)
 		{
-            $v1=$v
-            if($v -eq 'v141'){
-                $v1='v140'
-            }
 			foreach($c in $configurations)
 			{
 				foreach($l in $linking)
 				{
 					$datas += "		[$p,$v,$c,$l] {"
-					$libfile = "			lib += `${SRC}bin\$p\$v1\$c\lib\sfml-$pkgName"
-					$binfile = "			bin += `${SRC}bin\$p\$v1\$c\bin\sfml-$pkgName"
+					$libfile = "			lib += `${SRC}bin\$p\$v\$c\lib\sfml-$pkgName"
+					$binfile = "			bin += `${SRC}bin\$p\$v\$c\bin\sfml-$pkgName"
 					if ($l -eq "static")
 					{
 						$libfile += "-s"
@@ -166,7 +165,7 @@ function AddDependencies($pkgName)
 	foreach($p in $dependencies[$pkgName])
 	{
 		$datas += "
-			sfml-$p/$sfml_version.0,"
+			$pkg_prefix$p/$sfml_version,"
 	}
 	$datas = $datas.TrimEnd(",")
 	$datas += "
@@ -219,7 +218,7 @@ function GeneratePackage($pkgName)
 			Defines += SFML_STATIC;
 	}
 }"
-	$autopkg | Out-File "sfml-$pkgName.autopkg"
+	$autopkg | Out-File "$pkg_prefix$pkgName.autopkg"
 }
 
 Add-Type -AssemblyName System.IO.Compression.FileSystem
@@ -244,33 +243,34 @@ function CreateFile($fileName)
 }
 ########## Main ##########
 
-foreach($m in $sfml_module_list)
+foreach($module in $sfml_module_list)
 {
-	Write-Host "Generating sfml-$m.autopkg..."
-	GeneratePackage($m)
+	Write-Host "Generating $pkg_prefix$module.autopkg..."
+	GeneratePackage($module)
 }
-
 CreateDirectory("$dir\temp")
 CreateDirectory("$dir\sources")
 CreateDirectory("$dir\sources\include")
 #CreateDirectory("$dir\sources\doc")
-CreateFile("$dir\sources\include\delete.me")
+#CreateFile("$dir\sources\include\delete.me")
 CreateDirectory("$dir\distfiles")
 foreach($platform in $sfml_platforms_bits) {
 	foreach ($msvc in $sfml_msvc_versions) {
 		$p = "x86"
 		if ($platform -eq "64") { $p = "x64" }
 		$t = $msvc.Replace("c", "") + "0"
+        if ($msvc -eq "vc15") { $t = "v141"}
 
 		$filename = "SFML-$sfml_version-windows-$msvc-$platform-bit.zip"
 		$outfile = "$dir\distfiles\$filename"
-		$fileuri = $sfml_dowbload_url + $filename
-		if (-not (Test-Path $outfile)){
+		$fileuri = $sfml_download_url + $filename
+		if (-not (Test-Path $outfile)) {
 			Write-Host "Downloading $filename..."
 			$webclient = New-Object System.Net.WebClient
 			$webclient.DownloadFile($fileuri, $outfile)
 		}
 		Write-Host "Extracting $filename..."
+        Remove-Item "$dir\temp\*" -Recurse | Out-Null # Clearing directory to avoid Unzip exceptions
 		Unzip "$outfile" "$dir\temp"
 		$zip = "$dir\temp\SFML-$sfml_version"
 		
@@ -297,7 +297,7 @@ New-Item -ItemType Directory -Force -Path "$dir\repository" | Out-Null
 cd "$dir\repository"
 Get-ChildItem "../" -Filter *.autopkg | `
 Foreach-Object{
-	Write-Host "Generating Nuget Package from $_"
+	Write-Host "Generating NuGet package from $_"
 	Write-NuGetPackage ..\$_ | Out-Null
 	Remove-Item ..\$_ | Out-Null
 }
@@ -305,5 +305,5 @@ Write-Host "Cleaning..."
 Remove-Item *.symbols.* | Out-Null
 cd ..
 Remove-Item "$dir\temp" -Recurse | Out-Null
-#Remove-Item "$dir\sources" -Recurse | Out-Null
-Write-Host "Done!"
+if ($pkg_clear_sources -eq $true) { Remove-Item "$dir\sources" -Recurse | Out-Null }
+Write-Host "Done! Your packages are in $dir\repository"
