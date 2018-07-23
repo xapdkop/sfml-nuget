@@ -46,6 +46,8 @@ $sfml_changelog = "https://www.sfml-dev.org/changelog.php#sfml-$sfml_version"
 $scriptpath = $MyInvocation.MyCommand.Path
 $dir = Split-Path $scriptpath
 
+$coapp_download_url = "http://coapp.org/pages/releases.html"
+
 function PackageHeader($pkgName)
 {
 	$currentYear = (Get-Date).Year
@@ -243,6 +245,16 @@ function CreateFile($fileName)
 }
 ########## Main ##########
 
+try {
+    Show-CoAppToolsVersion | Out-Null
+    }
+catch {
+    Write-Host -ForegroundColor Yellow "You need CoApp tools to build NuGet packages!"
+    Read-Host "Press Enter to open CoApp website or Ctrl-C to exit"
+    Start-Process $coapp_download_url
+    Exit
+    }
+
 foreach($module in $sfml_module_list)
 {
 	Write-Host "Generating $pkg_prefix$module.autopkg..."
@@ -263,11 +275,22 @@ foreach($platform in $sfml_platforms_bits) {
 
 		$filename = "SFML-$sfml_version-windows-$msvc-$platform-bit.zip"
 		$outfile = "$dir\distfiles\$filename"
-		$fileuri = $sfml_download_url + $filename
 		if (-not (Test-Path $outfile)) {
-			Write-Host "Downloading $filename..."
+            $fileuri = $sfml_download_url + $filename
 			$webclient = New-Object System.Net.WebClient
-			$webclient.DownloadFile($fileuri, $outfile)
+            $downloaded = $false
+            while ($downloaded -eq $false) {
+                try {
+                    Write-Host "Downloading $filename..."
+			        $webclient.DownloadFile($fileuri, $outfile)
+                    $downloaded = $true
+                    Write-Host -ForegroundColor Green "$filename downloaded"
+                }
+                catch {
+                    Write-Warning "Unable to connect to the SFML server $sfml_download_url"
+                    Write-Host -ForegroundColor Yellow "Trying again... Press Ctrl-C to exit"
+                }
+            }
 		}
 		Write-Host "Extracting $filename..."
         Remove-Item "$dir\temp\*" -Recurse | Out-Null # Clearing directory to avoid Unzip exceptions
@@ -298,12 +321,13 @@ cd "$dir\repository"
 Get-ChildItem "../" -Filter *.autopkg | `
 Foreach-Object{
 	Write-Host "Generating NuGet package from $_"
-	Write-NuGetPackage ..\$_ | Out-Null
-	Remove-Item ..\$_ | Out-Null
+    Write-NuGetPackage ..\$_ | Out-Null
+    Remove-Item ..\$_ | Out-Null
 }
 Write-Host "Cleaning..."
 Remove-Item *.symbols.* | Out-Null
 cd ..
 Remove-Item "$dir\temp" -Recurse | Out-Null
 if ($pkg_clear_sources -eq $true) { Remove-Item "$dir\sources" -Recurse | Out-Null }
-Write-Host "Done! Your packages are in $dir\repository"
+Write-Host -ForegroundColor Green "Done! Your packages are available in $dir\repository"
+Read-Host "Press Enter to continue..."
