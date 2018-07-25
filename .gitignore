@@ -10,5 +10,8 @@
 # Temp folder
 [Tt]emp/
 
+# Build folder
+[Bb]uild/
+
 # .autopkg
 *.autopkg

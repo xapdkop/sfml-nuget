@@ -186,7 +186,7 @@ function GeneratePackage($pkgName)
 
 	files {
 		#defines {
-			SRC = sources\;
+			SRC = ..\sources\;
 		}
 
 "
@@ -267,6 +267,7 @@ CreateDirectory("$dir\temp")
 CreateDirectory("$dir\sources")
 CreateDirectory("$dir\sources\include")
 CreateDirectory("$dir\distfiles")
+CreateDirectory("$dir\build")
 #CreateDirectory("$dir\sources\doc")
 
 # For old include Workaround
@@ -335,24 +336,27 @@ if ($use_old_include_workaround -eq $false) {
 }
 
 Write-Host
+cd "$dir\build"
 foreach($module in $sfml_module_list)
 {
 	Write-Host "Generating $pkg_prefix$module.autopkg..."
 	GeneratePackage($module)
 }
+cd ..
 
 New-Item -ItemType Directory -Force -Path "$dir\repository" | Out-Null
 cd "$dir\repository"
-Get-ChildItem "../" -Filter *.autopkg | `
+Get-ChildItem "../build/" -Filter *.autopkg | `
 Foreach-Object{
 	Write-Host "`nGenerating NuGet package from $_...`n"
-    Write-NuGetPackage ..\$_ | Out-Null
-    Remove-Item ..\$_ | Out-Null
+    Write-NuGetPackage ..\build\$_ | Out-Null
+    Remove-Item ..\build\$_ | Out-Null
 }
 Write-Host "`nCleaning..."
 Remove-Item *.symbols.* | Out-Null
 cd ..
 Remove-Item "$dir\temp" -Recurse | Out-Null
+Remove-Item "$dir\build" -Recurse | Out-Null
 if ($use_old_include_workaround) { Remove-Item "$dir\sources\include\delete.me" | Out-Null } # For old include workaround
 if ($pkg_clear_sources -eq $true) { Remove-Item "$dir\sources" -Recurse | Out-Null }
 Write-Host -ForegroundColor Green "Done! Your packages are available in $dir\repository"
