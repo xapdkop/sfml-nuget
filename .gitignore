@@ -1,0 +1,14 @@
+# Distfiles
+[Dd]istfiles/
+
+# Packages
+[Rr]epository/
+
+# Source code
+[Ss]ources/
+
+# Temp folder
+[Tt]emp/
+
+# .autopkg
+*.autopkg
