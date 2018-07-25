@@ -3,7 +3,7 @@
 #
 
 #Package customisation vars
-$pkg_prefix = "sfml-" # If you change this, do not remove the reference to SFML
+$pkg_prefix = "sfml." # If you change this, do not remove the reference to SFML
 $pkg_owner = "username" # Replace username with your name
 $pkg_tags = "sfml, native, CoApp" # Tags for your packages
 $pkg_clear_sources = $false; # Use $true to delete source files or $false to keep them
@@ -247,15 +247,16 @@ function CreateFile($fileName)
 }
 ########## Main ##########
 
+# Checking on installed CoApp Tools
 try {
     Show-CoAppToolsVersion | Out-Null
-    }
+}
 catch {
     Write-Host -ForegroundColor Yellow "You need CoApp tools to build NuGet packages!"
-    Read-Host "Press Enter to open CoApp website or Ctrl-C to exit"
+    Read-Host "Press ENTER to open CoApp website or Ctrl-C to exit..."
     Start-Process $coapp_download_url
     Exit
-    }
+}
 
 # For old include workaround
 if ($use_old_include_workaround) {
@@ -265,8 +266,8 @@ if ($use_old_include_workaround) {
 CreateDirectory("$dir\temp")
 CreateDirectory("$dir\sources")
 CreateDirectory("$dir\sources\include")
-#CreateDirectory("$dir\sources\doc")
 CreateDirectory("$dir\distfiles")
+#CreateDirectory("$dir\sources\doc")
 
 # For old include Workaround
 if ($use_old_include_workaround) {
@@ -288,7 +289,7 @@ foreach($platform in $sfml_platforms_bits) {
             $downloaded = $false
             while ($downloaded -eq $false) {
                 try {
-                    Write-Host "Downloading $filename..."
+                    Write-Host "`nDownloading $filename..."
 			        $webclient.DownloadFile($fileuri, $outfile)
                     $downloaded = $true
                     Write-Host -ForegroundColor Green "$filename downloaded"
@@ -299,7 +300,7 @@ foreach($platform in $sfml_platforms_bits) {
                 }
             }
 		}
-		Write-Host "Extracting $filename..."
+		Write-Host "`nExtracting $filename..."
         Remove-Item "$dir\temp\*" -Recurse | Out-Null # Clearing directory to avoid Unzip exceptions
 		Unzip "$outfile" "$dir\temp"
 		$zip = "$dir\temp\SFML-$sfml_version"
@@ -311,8 +312,8 @@ foreach($platform in $sfml_platforms_bits) {
 		CreateDirectory("$dir\sources\bin\$p\$t\debug\lib\")
 		CreateDirectory("$dir\sources\bin\$p\$t\release\lib\")
 
-		Copy-Item "$zip\include\*" "$dir\sources\include" -Force -Recurse | Out-Null
-		#Copy-Item "$zip\doc\*" "$dir\sources\doc" -Force -Recurse | Out-Null
+		Copy-Item "$zip\include\*" "$dir\sources\include\" -Force -Recurse | Out-Null
+		#Copy-Item "$zip\doc\*" "$dir\sources\doc\" -Force -Recurse | Out-Null
 		Move-Item "$zip\bin\sfml-*-d-2.dll" "$dir\sources\bin\$p\$t\debug\bin\" -Force | Out-Null
 		Move-Item "$zip\bin\sfml-*.dll" "$dir\sources\bin\$p\$t\release\bin\" -Force | Out-Null
 		Move-Item "$zip\bin\*.dll" "$dir\sources\ext\bin\$p\" -Force | Out-Null
@@ -321,7 +322,7 @@ foreach($platform in $sfml_platforms_bits) {
 		Move-Item "$zip\lib\*.lib" "$dir\sources\ext\lib\$p\" -Force | Out-Null
 		Remove-Item "$zip" -Recurse | Out-Null
 	}
- }
+}
 
 # New include workaround
 if ($use_old_include_workaround -eq $false) {
@@ -333,6 +334,7 @@ if ($use_old_include_workaround -eq $false) {
     }
 }
 
+Write-Host
 foreach($module in $sfml_module_list)
 {
 	Write-Host "Generating $pkg_prefix$module.autopkg..."
@@ -343,15 +345,15 @@ New-Item -ItemType Directory -Force -Path "$dir\repository" | Out-Null
 cd "$dir\repository"
 Get-ChildItem "../" -Filter *.autopkg | `
 Foreach-Object{
-	Write-Host "Generating NuGet package from $_"
+	Write-Host "`nGenerating NuGet package from $_...`n"
     Write-NuGetPackage ..\$_ | Out-Null
     Remove-Item ..\$_ | Out-Null
 }
-Write-Host "Cleaning..."
+Write-Host "`nCleaning..."
 Remove-Item *.symbols.* | Out-Null
 cd ..
 Remove-Item "$dir\temp" -Recurse | Out-Null
 if ($use_old_include_workaround) { Remove-Item "$dir\sources\include\delete.me" | Out-Null } # For old include workaround
 if ($pkg_clear_sources -eq $true) { Remove-Item "$dir\sources" -Recurse | Out-Null }
 Write-Host -ForegroundColor Green "Done! Your packages are available in $dir\repository"
-Read-Host "Press Enter to continue..."
+Pause
