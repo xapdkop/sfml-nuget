@@ -299,8 +299,9 @@ foreach($platform in $sfml_platforms_bits)
 				}
 				catch
 				{
-					Write-Warning "Unable to connect to the SFML server $sfml_download_url"
-					Write-Host -ForegroundColor Yellow "Trying again... Press Ctrl-C to exit"
+					Write-Warning "An error occurred while downloading the file $fileuri"
+					Write-Host -ForegroundColor Yellow "Press ENTER to try again or Ctrl-C to exit..."
+					Read-Host
 				}
 			}
 		}
