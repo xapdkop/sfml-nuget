@@ -1,8 +1,8 @@
-﻿#
+#
 # sfml-nuget.ps1
 #
 
-#Package customisation vars
+# Package customisation vars
 $pkg_prefix = "sfml." # If you change this, do not remove the reference to SFML
 $pkg_owner = "username" # Replace username with your name
 $pkg_tags = "sfml, native, CoApp" # Tags for your packages
@@ -27,22 +27,15 @@ $dependencies.Add("network", "system")
 
 # SFML Packages variables
 $sfml_authors = "Laurent Gomila"
-$sfml_owners =  "$pkg_owner"
+$sfml_owners =	"$pkg_owner"
 $sfml_licence_url = "http://www.sfml-dev.org/license.php"
 $sfml_project_url = "http://www.sfml-dev.org"
 $sfml_icon_url = "http://www.sfml-dev.org/images/sfml-icon.png"
 $sfml_require_license_acceptance = "false"
 $sfml_summary = "SFML provides a simple interface to the various components of your PC, to ease the development of games and multimedia applications. It is composed of five modules: system, window, graphics, audio and network."
-$sfml_description = "SFML provides a simple interface to the various components
-		of your PC, to ease the development of games and multimedia applications.
-		It is composed of five modules: system, window, graphics, audio and network.
-
-        With SFML, your application can compile and run out of the box on the most
-		common operating systems: Windows, Linux, Mac OS X and soon Android & iOS.
-
-        SFML has official bindings for the C and .Net languages. And thanks to its
-		active community, it is also available in many other languages such as Java,
-		Ruby, Python, Go, and more."
+$sfml_description = "SFML provides a simple interface to the various components of your PC, to ease the development of games and multimedia applications. It is composed of five modules: system, window, graphics, audio and network.
+With SFML, your application can compile and run out of the box on the most common operating systems: Windows, Linux, Mac OS X and soon Android & iOS.
+SFML has official bindings for the C and .Net languages. And thanks to its active community, it is also available in many other languages such as Java, Ruby, Python, Go, and more."
 $sfml_changelog = "https://www.sfml-dev.org/changelog.php#sfml-$sfml_version"
 $scriptpath = $MyInvocation.MyCommand.Path
 $dir = Split-Path $scriptpath
@@ -54,9 +47,9 @@ function PackageHeader($pkgName)
 	$currentYear = (Get-Date).Year
 	return "configurations {
 	UserPlatformToolset {
-	    // Needed because autopackage lacks VS2015 support
-        	key = ""PlatformToolset"";
-        	choices: ""v120,v140,v141"";
+			// Needed because autopackage lacks VS2015 support
+					key = ""PlatformToolset"";
+					choices: ""v120,v140,v141"";
 	};
 }
 
@@ -77,7 +70,7 @@ nuget {
 		copyright: Copyright $currentYear;
 		tags: ""$pkg_tags"";
 	}
-	
+
 	#output-packages {
 		default : `${pkgname};
 		redist : `${pkgname}.redist;
@@ -228,8 +221,8 @@ function GeneratePackage($pkgName)
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 function Unzip
 {
-    param([string]$zipfile, [string]$outpath)
-    [System.IO.Compression.ZipFile]::ExtractToDirectory($zipfile, $outpath)
+		param([string]$zipfile, [string]$outpath)
+		[System.IO.Compression.ZipFile]::ExtractToDirectory($zipfile, $outpath)
 }
 
 function CreateDirectory($dirName)
@@ -248,19 +241,22 @@ function CreateFile($fileName)
 ########## Main ##########
 
 # Checking on installed CoApp Tools
-try {
-    Show-CoAppToolsVersion | Out-Null
+try
+{
+		Show-CoAppToolsVersion | Out-Null
 }
-catch {
-    Write-Host -ForegroundColor Yellow "You need CoApp tools to build NuGet packages!"
-    Read-Host "Press ENTER to open CoApp website or Ctrl-C to exit..."
-    Start-Process $coapp_download_url
-    Exit
+catch
+{
+		Write-Host -ForegroundColor Yellow "You need CoApp tools to build NuGet packages!"
+		Read-Host "Press ENTER to open CoApp website or Ctrl-C to exit..."
+		Start-Process $coapp_download_url
+		Exit
 }
 
 # For old include workaround
-if ($use_old_include_workaround) {
-        $include_workaround = ""
+if ($use_old_include_workaround)
+{
+				$include_workaround = ""
 }
 
 CreateDirectory("$dir\temp")
@@ -271,41 +267,48 @@ CreateDirectory("$dir\build")
 #CreateDirectory("$dir\sources\doc")
 
 # For old include Workaround
-if ($use_old_include_workaround) {
-    CreateFile("$dir\sources\include\delete.me")
+if ($use_old_include_workaround)
+{
+	CreateFile("$dir\sources\include\delete.me")
 }
 
-foreach($platform in $sfml_platforms_bits) {
-	foreach ($msvc in $sfml_msvc_versions) {
+foreach($platform in $sfml_platforms_bits)
+{
+	foreach ($msvc in $sfml_msvc_versions)
+	{
 		$p = "x86"
 		if ($platform -eq "64") { $p = "x64" }
 		$t = $msvc.Replace("c", "") + "0"
-        if ($msvc -eq "vc15") { $t = "v141"}
+		if ($msvc -eq "vc15") { $t = "v141"}
 
 		$filename = "SFML-$sfml_version-windows-$msvc-$platform-bit.zip"
 		$outfile = "$dir\distfiles\$filename"
-		if (-not (Test-Path $outfile)) {
-            $fileuri = $sfml_download_url + $filename
+		if (-not (Test-Path $outfile))
+		{
+			$fileuri = $sfml_download_url + $filename
 			$webclient = New-Object System.Net.WebClient
-            $downloaded = $false
-            while ($downloaded -eq $false) {
-                try {
-                    Write-Host "`nDownloading $filename..."
-			        $webclient.DownloadFile($fileuri, $outfile)
-                    $downloaded = $true
-                    Write-Host -ForegroundColor Green "$filename downloaded"
-                }
-                catch {
-                    Write-Warning "Unable to connect to the SFML server $sfml_download_url"
-                    Write-Host -ForegroundColor Yellow "Trying again... Press Ctrl-C to exit"
-                }
-            }
+			$downloaded = $false
+			while ($downloaded -eq $false)
+			{
+				try
+				{
+					Write-Host "`nDownloading $filename..."
+					$webclient.DownloadFile($fileuri, $outfile)
+					$downloaded = $true
+					Write-Host -ForegroundColor Green "$filename downloaded"
+				}
+				catch
+				{
+					Write-Warning "Unable to connect to the SFML server $sfml_download_url"
+					Write-Host -ForegroundColor Yellow "Trying again... Press Ctrl-C to exit"
+				}
+			}
 		}
 		Write-Host "`nExtracting $filename..."
-        Remove-Item "$dir\temp\*" -Recurse | Out-Null # Clearing directory to avoid Unzip exceptions
+		Remove-Item "$dir\temp\*" -Recurse | Out-Null # Clearing directory to avoid Unzip exceptions
 		Unzip "$outfile" "$dir\temp"
 		$zip = "$dir\temp\SFML-$sfml_version"
-		
+
 		CreateDirectory("$dir\sources\ext\lib\$p\")
 		CreateDirectory("$dir\sources\ext\bin\$p\")
 		CreateDirectory("$dir\sources\bin\$p\$t\debug\bin\")
@@ -326,35 +329,38 @@ foreach($platform in $sfml_platforms_bits) {
 }
 
 # New include workaround
-if ($use_old_include_workaround -eq $false) {
-    if ((Get-ChildItem -Path "$dir\sources\include\" -File -Force).Count -gt 0) {
-        $include_workaround = ""
-    }
-    else {
-        $include_workaround = "SFML\"
-    }
+if ($use_old_include_workaround -eq $false)
+{
+	if ((Get-ChildItem -Path "$dir\sources\include\" -File -Force).Count -gt 0)
+	{
+		$include_workaround = ""
+	}
+	else
+	{
+		$include_workaround = "SFML\"
+	}
 }
 
 Write-Host
-cd "$dir\build"
+Set-Location -Path "$dir\build"
 foreach($module in $sfml_module_list)
 {
 	Write-Host "Generating $pkg_prefix$module.autopkg..."
 	GeneratePackage($module)
 }
-cd ..
+Set-Location -Path ..
 
 New-Item -ItemType Directory -Force -Path "$dir\repository" | Out-Null
-cd "$dir\repository"
+Set-Location -Path "$dir\repository"
 Get-ChildItem "../build/" -Filter *.autopkg | `
 Foreach-Object{
 	Write-Host "`nGenerating NuGet package from $_...`n"
-    Write-NuGetPackage ..\build\$_ | Out-Null
-    Remove-Item ..\build\$_ | Out-Null
+	Write-NuGetPackage ..\build\$_ | Out-Null
+	Remove-Item ..\build\$_ | Out-Null
 }
 Write-Host "`nCleaning..."
 Remove-Item *.symbols.* | Out-Null
-cd ..
+Set-Location -Path ..
 Remove-Item "$dir\temp" -Recurse | Out-Null
 Remove-Item "$dir\build" -Recurse | Out-Null
 if ($use_old_include_workaround) { Remove-Item "$dir\sources\include\delete.me" | Out-Null } # For old include workaround
