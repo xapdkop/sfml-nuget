@@ -7,6 +7,7 @@ $pkg_prefix = "sfml-" # If you change this, do not remove the reference to SFML
 $pkg_owner = "username" # Replace username with your name
 $pkg_tags = "sfml, native, CoApp" # Tags for your packages
 $pkg_clear_sources = $false; # Use $true to delete source files or $false to keep them
+$use_old_include_workaround = $false;
 
 # SFML nuget packages generation variable
 $sfml_module_list = "system", "window", "graphics", "audio", "network" # SFML packages
@@ -178,6 +179,7 @@ function AddDependencies($pkgName)
 
 function GeneratePackage($pkgName)
 {
+
 	$autopkg = PackageHeader($pkgName)
 	$autopkg += AddDependencies($pkgName)
 	$autopkg += "
@@ -191,7 +193,7 @@ function GeneratePackage($pkgName)
 	if ($pkgName -eq "system")
 	{
 		$autopkg += "		nestedInclude: {
-			#destination = `${d_include};
+			#destination = `${d_include}$include_workaround;
 			""`${SRC}include\**""
 		};
 
@@ -255,17 +257,22 @@ catch {
     Exit
     }
 
-foreach($module in $sfml_module_list)
-{
-	Write-Host "Generating $pkg_prefix$module.autopkg..."
-	GeneratePackage($module)
+# For old include workaround
+if ($use_old_include_workaround) {
+        $include_workaround = ""
 }
+
 CreateDirectory("$dir\temp")
 CreateDirectory("$dir\sources")
 CreateDirectory("$dir\sources\include")
 #CreateDirectory("$dir\sources\doc")
-#CreateFile("$dir\sources\include\delete.me")
 CreateDirectory("$dir\distfiles")
+
+# For old include Workaround
+if ($use_old_include_workaround) {
+    CreateFile("$dir\sources\include\delete.me")
+}
+
 foreach($platform in $sfml_platforms_bits) {
 	foreach ($msvc in $sfml_msvc_versions) {
 		$p = "x86"
@@ -316,6 +323,22 @@ foreach($platform in $sfml_platforms_bits) {
 	}
  }
 
+# New include workaround
+if ($use_old_include_workaround -eq $false) {
+    if ((Get-ChildItem -Path "$dir\sources\include\" -File -Force).Count -gt 0) {
+        $include_workaround = ""
+    }
+    else {
+        $include_workaround = "SFML\"
+    }
+}
+
+foreach($module in $sfml_module_list)
+{
+	Write-Host "Generating $pkg_prefix$module.autopkg..."
+	GeneratePackage($module)
+}
+
 New-Item -ItemType Directory -Force -Path "$dir\repository" | Out-Null
 cd "$dir\repository"
 Get-ChildItem "../" -Filter *.autopkg | `
@@ -328,6 +351,7 @@ Write-Host "Cleaning..."
 Remove-Item *.symbols.* | Out-Null
 cd ..
 Remove-Item "$dir\temp" -Recurse | Out-Null
+if ($use_old_include_workaround) { Remove-Item "$dir\sources\include\delete.me" | Out-Null } # For old include workaround
 if ($pkg_clear_sources -eq $true) { Remove-Item "$dir\sources" -Recurse | Out-Null }
 Write-Host -ForegroundColor Green "Done! Your packages are available in $dir\repository"
 Read-Host "Press Enter to continue..."
