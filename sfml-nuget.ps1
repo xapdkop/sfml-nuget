@@ -2,17 +2,18 @@
 # sfml-nuget.ps1
 #
 
-# Package customisation vars
-$pkg_prefix = "sfml." # If you change this, do not remove the reference to SFML
-$pkg_owner = "username" # Replace username with your name
-$pkg_tags = "sfml, native, CoApp" # Tags for your packages
-$pkg_clear_sources = $false; # Use $true to delete source files or $false to keep them
-$use_old_include_workaround = $false;
+# Some customisation variables
+$pkg_prefix = "sfml." # Prefix of packages. If you change this variable, do not remove the reference to SFML!!!
+$pkg_owner = "username" # Packages "owner" name. Replace username with your name
+$pkg_tags = "sfml, native, CoApp" # Tags for your packages, "sfml, native, CoApp" by default
+$keep_sources = $true; # Use $true to keep source files or $false to delete them, $true by default
+$keep_autopkg = $false; # Keep autopkg files, $false by default
+$use_old_include_workaround = $false; # Use in case of errors with the new one, $false by default
 
 # SFML nuget packages generation variable
-$sfml_module_list = "system", "window", "graphics", "audio", "network" # SFML packages
+$sfml_module_list = "system", "window", "graphics", "audio", "network" # SFML packages, that will be generated
 $sfml_download_url = "http://www.sfml-dev.org/files/"
-$sfml_version = "2.5.0"
+$sfml_version = "2.5.0" # Min supported version - 2.2
 $sfml_platforms = "x86", "x64"
 $sfml_toolchains = "v120", "v140", "v141"
 $sfml_configurations = "debug", "release"
@@ -254,7 +255,7 @@ catch
 }
 
 # For old include workaround
-if ($use_old_include_workaround)
+if ($use_old_include_workaround -ne $false)
 {
 	$include_workaround = ""
 }
@@ -352,14 +353,16 @@ Get-ChildItem "../build/" -Filter *.autopkg | `
 Foreach-Object{
 	Write-Host "`nGenerating NuGet package from $_...`n"
 	Write-NuGetPackage ..\build\$_ | Out-Null
-	Remove-Item ..\build\$_ | Out-Null
+	if ($keep_autopkg -eq $false) {
+		Remove-Item ..\build\$_ | Out-Null
+	}
 }
 Write-Host "`nCleaning..."
 Remove-Item *.symbols.* | Out-Null
 Set-Location -Path ..
 Remove-Item "$dir\temp" -Recurse | Out-Null
-Remove-Item "$dir\build" -Recurse | Out-Null
-if ($use_old_include_workaround) { Remove-Item "$dir\sources\include\delete.me" | Out-Null } # For old include workaround
-if ($pkg_clear_sources -eq $true) { Remove-Item "$dir\sources" -Recurse | Out-Null }
+if ($keep_autopkg -eq $false) { Remove-Item "$dir\build" -Recurse | Out-Null }
+if ($use_old_include_workaround -ne $false) { Remove-Item "$dir\sources\include\delete.me" | Out-Null } # For old include workaround
+if ($keep_sources -ne $true) { Remove-Item "$dir\sources" -Recurse | Out-Null }
 Write-Host -ForegroundColor Green "Done! Your packages are available in $dir\repository"
 Pause
