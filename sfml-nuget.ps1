@@ -12,12 +12,10 @@ $use_old_include_workaround = $false;
 # SFML nuget packages generation variable
 $sfml_module_list = "system", "window", "graphics", "audio", "network" # SFML packages
 $sfml_download_url = "http://www.sfml-dev.org/files/"
-$sfml_msvc_versions = "vc12", "vc14", "vc15"
-$sfml_platforms_bits = "32", "64"
 $sfml_version = "2.5.0"
-$platforms = "x86", "x64"
-$toolchains = "v120", "v140", "v141"
-$configurations = "debug", "release"
+$sfml_platforms = "x86", "x64"
+$sfml_toolchains = "v120", "v140", "v141"
+$sfml_configurations = "debug", "release"
 
 # SFML Packages variables
 $sfml_authors = "Laurent Gomila"
@@ -34,7 +32,10 @@ $sfml_changelog = "https://www.sfml-dev.org/changelog.php#sfml-$sfml_version"
 $scriptpath = $MyInvocation.MyCommand.Path
 $dir = Split-Path $scriptpath
 
+# Don't change these values
 $coapp_download_url = "http://coapp.org/pages/releases.html"
+$to_msvc = @{ "v100" = "vc10"; "v110" = "vc11"; "v120" = "vc12"; "v140" = "vc14"; "v141" = "vc15" }
+$to_bits = @{ "x86" = "32"; "x64" = "64" }
 $linking = "static", "dynamic"
 $dependencies = @{}
 $dependencies.Add("window", "system")
@@ -81,11 +82,11 @@ nuget {
 function AddMainFile()
 {
 	$datas = ""
-	foreach($p in $platforms)
+	foreach($p in $sfml_platforms)
 	{
-		foreach($v in $toolchains)
+		foreach($v in $sfml_toolchains)
 		{
-			foreach($c in $configurations)
+			foreach($c in $sfml_configurations)
 			{
 				$datas += "		[$p,$v,$c] {"
 				$libfile = "			lib += `${SRC}bin\$p\$v\$c\lib\sfml-main"
@@ -108,11 +109,11 @@ $libfile
 function AddFiles($pkgName)
 {
 	$datas = ""
-	foreach($p in $platforms)
+	foreach($p in $sfml_platforms)
 	{
-		foreach($v in $toolchains)
+		foreach($v in $sfml_toolchains)
 		{
-			foreach($c in $configurations)
+			foreach($c in $sfml_configurations)
 			{
 				foreach($l in $linking)
 				{
@@ -272,16 +273,11 @@ if ($use_old_include_workaround)
 	CreateFile("$dir\sources\include\delete.me")
 }
 
-foreach($platform in $sfml_platforms_bits)
+foreach($p in $sfml_platforms)
 {
-	foreach ($msvc in $sfml_msvc_versions)
+	foreach ($t in $sfml_toolchains)
 	{
-		$p = "x86"
-		if ($platform -eq "64") { $p = "x64" }
-		$t = $msvc.Replace("c", "") + "0"
-		if ($msvc -eq "vc15") { $t = "v141"}
-
-		$filename = "SFML-$sfml_version-windows-$msvc-$platform-bit.zip"
+		$filename = "SFML-$sfml_version-windows-" + $to_msvc[$t] + "-" + $to_bits[$p] + "-bit.zip"
 		$outfile = "$dir\distfiles\$filename"
 		if (-not (Test-Path $outfile))
 		{
