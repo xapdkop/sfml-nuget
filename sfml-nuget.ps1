@@ -18,12 +18,6 @@ $sfml_version = "2.5.0"
 $platforms = "x86", "x64"
 $toolchains = "v120", "v140", "v141"
 $configurations = "debug", "release"
-$linking = "static", "dynamic"
-$dependencies = @{}
-$dependencies.Add("window", "system")
-$dependencies.Add("graphics", ("window", "system"))
-$dependencies.Add("audio", "system")
-$dependencies.Add("network", "system")
 
 # SFML Packages variables
 $sfml_authors = "Laurent Gomila"
@@ -41,15 +35,21 @@ $scriptpath = $MyInvocation.MyCommand.Path
 $dir = Split-Path $scriptpath
 
 $coapp_download_url = "http://coapp.org/pages/releases.html"
+$linking = "static", "dynamic"
+$dependencies = @{}
+$dependencies.Add("window", "system")
+$dependencies.Add("graphics", ("window", "system"))
+$dependencies.Add("audio", "system")
+$dependencies.Add("network", "system")
 
 function PackageHeader($pkgName)
 {
 	$currentYear = (Get-Date).Year
 	return "configurations {
 	UserPlatformToolset {
-			// Needed because autopackage lacks VS2015 support
-					key = ""PlatformToolset"";
-					choices: ""v120,v140,v141"";
+		// Needed because autopackage lacks VS2015 support
+			key = ""PlatformToolset"";
+			choices: ""v120, v140, v141"";
 	};
 }
 
@@ -87,14 +87,14 @@ function AddMainFile()
 		{
 			foreach($c in $configurations)
 			{
-					$datas += "		[$p,$v,$c] {"
-					$libfile = "			lib += `${SRC}bin\$p\$v\$c\lib\sfml-main"
-					if ($c -eq "debug")
-					{
-						$libfile += "-d"
-					}
-					$libfile += ".lib;"
-					$datas += "
+				$datas += "		[$p,$v,$c] {"
+				$libfile = "			lib += `${SRC}bin\$p\$v\$c\lib\sfml-main"
+				if ($c -eq "debug")
+				{
+					$libfile += "-d"
+				}
+				$libfile += ".lib;"
+				$datas += "
 $libfile
 		}
 
@@ -221,8 +221,8 @@ function GeneratePackage($pkgName)
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 function Unzip
 {
-		param([string]$zipfile, [string]$outpath)
-		[System.IO.Compression.ZipFile]::ExtractToDirectory($zipfile, $outpath)
+	param([string]$zipfile, [string]$outpath)
+	[System.IO.Compression.ZipFile]::ExtractToDirectory($zipfile, $outpath)
 }
 
 function CreateDirectory($dirName)
@@ -243,20 +243,20 @@ function CreateFile($fileName)
 # Checking on installed CoApp Tools
 try
 {
-		Show-CoAppToolsVersion | Out-Null
+	Show-CoAppToolsVersion | Out-Null
 }
 catch
 {
-		Write-Host -ForegroundColor Yellow "You need CoApp tools to build NuGet packages!"
-		Read-Host "Press ENTER to open CoApp website or Ctrl-C to exit..."
-		Start-Process $coapp_download_url
-		Exit
+	Write-Host -ForegroundColor Yellow "You need CoApp tools to build NuGet packages!"
+	Read-Host "Press ENTER to open CoApp website or Ctrl-C to exit..."
+	Start-Process $coapp_download_url
+	Exit
 }
 
 # For old include workaround
 if ($use_old_include_workaround)
 {
-				$include_workaround = ""
+	$include_workaround = ""
 }
 
 CreateDirectory("$dir\temp")
