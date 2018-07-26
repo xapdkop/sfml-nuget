@@ -29,10 +29,9 @@ $sfml_description = "SFML provides a simple interface to the various components 
 With SFML, your application can compile and run out of the box on the most common operating systems: Windows, Linux, Mac OS X and soon Android & iOS.
 SFML has official bindings for the C and .Net languages. And thanks to its active community, it is also available in many other languages such as Java, Ruby, Python, Go, and more."
 $sfml_changelog = "https://www.sfml-dev.org/changelog.php#sfml-$sfml_version"
-$scriptpath = $MyInvocation.MyCommand.Path
-$dir = Split-Path $scriptpath
 
 # Don't change these values
+$dir = Split-Path -Path $MyInvocation.MyCommand.Path
 $coapp_download_url = "http://coapp.org/pages/releases.html"
 $to_msvc = @{ "v100" = "vc10"; "v110" = "vc11"; "v120" = "vc12"; "v140" = "vc14"; "v141" = "vc15" }
 $to_bits = @{ "x86" = "32"; "x64" = "64" }
