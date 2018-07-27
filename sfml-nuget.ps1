@@ -2,25 +2,30 @@
 # sfml-nuget.ps1
 #
 
+#########################
+
 # Some customisation variables
-$pkg_prefix = "sfml." # Prefix of packages. If you change this variable, do not remove the reference to SFML!!!
-$pkg_owner = "username" # Packages "owner" name. Replace username with your name
-$pkg_tags = "sfml, native, CoApp" # Tags for your packages, "sfml, native, CoApp" by default
+$pkg_prefix = "sfml." # Prefix of packages. If you change this variable, do not remove the reference to the SFML!!!
 $keep_sources = $true; # Use $true to keep source files or $false to delete them, $true by default
 $keep_autopkg = $false; # Keep autopkg files, $false by default
 $use_old_include_workaround = $false; # Use in case of errors with the new one, $false by default
 
-# SFML nuget packages generation variable
+# SFML packages variables
+$sfml_owners =	"username" # Packages "owner" name. Replace username with your name
+$sfml_tags = "sfml, native, CoApp" # Tags for your packages, "sfml, native, CoApp" by default
+
+# SFML nuget packages 'generation' variables
 $sfml_module_list = "system", "window", "graphics", "audio", "network" # SFML packages, that will be generated
-$sfml_download_url = "http://www.sfml-dev.org/files/"
 $sfml_version = "2.5.0" # Min supported version - 2.2
 $sfml_platforms = "x86", "x64"
 $sfml_toolchains = "v120", "v140", "v141"
 $sfml_configurations = "debug", "release"
 
-# SFML Packages variables
+#########################
+
+# It's not recommended to change these values
+$sfml_download_url = "http://www.sfml-dev.org/files/"
 $sfml_authors = "Laurent Gomila"
-$sfml_owners =	"$pkg_owner"
 $sfml_licence_url = "http://www.sfml-dev.org/license.php"
 $sfml_project_url = "http://www.sfml-dev.org"
 $sfml_icon_url = "http://www.sfml-dev.org/images/sfml-icon.png"
@@ -34,14 +39,12 @@ $sfml_changelog = "https://www.sfml-dev.org/changelog.php#sfml-$sfml_version"
 # Don't change these values
 $dir = Split-Path -Path $MyInvocation.MyCommand.Path
 $coapp_download_url = "http://coapp.org/pages/releases.html"
-$to_msvc = @{ "v100" = "vc10"; "v110" = "vc11"; "v120" = "vc12"; "v140" = "vc14"; "v141" = "vc15" }
-$to_bits = @{ "x86" = "32"; "x64" = "64" }
 $linking = "static", "dynamic"
-$dependencies = @{}
-$dependencies.Add("window", "system")
-$dependencies.Add("graphics", ("window", "system"))
-$dependencies.Add("audio", "system")
-$dependencies.Add("network", "system")
+$to_msvc = @{ "v100" = "vc10"; "v110" = "vc11"; "v120" = "vc12"; "v140" = "vc14"; "v141" = "vc15" }
+$to_bits = @{ "x86" = "32"; "Win32" = "32" ; "x64" = "64" }
+$dependencies = @{ "window" = "system"; "graphics" = ("window", "system"); "audio" = "system"; "network" = "system" }
+
+#########################
 
 function PackageHeader($pkgName)
 {
@@ -69,7 +72,7 @@ nuget {
 		description: @""$sfml_description"";
 		releaseNotes: ""$sfml_changelog"";
 		copyright: Copyright $currentYear;
-		tags: ""$pkg_tags"";
+		tags: ""$sfml_tags"";
 	}
 
 	#output-packages {
@@ -239,7 +242,10 @@ function CreateFile($fileName)
 		New-Item -ItemType File -Force -Path "$fileName" | Out-Null
 	}
 }
-########## Main ##########
+
+#########################
+########## Main #########
+#########################
 
 # Checking on installed CoApp Tools
 try
