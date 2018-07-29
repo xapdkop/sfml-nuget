@@ -6,9 +6,10 @@
 
 # Some customisation variables
 $pkg_prefix = "sfml." # Prefix of packages. If you change this variable, do not remove the reference to the SFML!!!
-$keep_sources = $true; # Use $true to keep source files or $false to delete them, $true by default
-$keep_autopkg = $false; # Keep autopkg files, $false by default
-$use_old_include_workaround = $false; # Use in case of errors with the new one, $false by default
+$keep_sources = $true # Use $true to keep source files or $false to delete them, $true by default
+$keep_autopkg = $false # Keep autopkg files, $false by default
+$use_old_include_workaround = $false # Use in case of errors with the new one, $false by default
+$add_docs = $false # Add docs in system module, $false by default
 
 # SFML packages variables
 $sfml_owners =	"username" # Packages "owner" name. Replace username with your name
@@ -195,6 +196,14 @@ function GeneratePackage($pkgName)
 		};
 
 "
+		if ($add_docs -ne $false)
+		{
+			$autopkg += "		docs: {
+			`${SRC}doc\**\*
+		};
+
+"
+		}
 		$autopkg += AddMainFile
 	}
 	$autopkg += AddFiles($pkgName)
@@ -271,7 +280,10 @@ CreateDirectory("$dir\sources")
 CreateDirectory("$dir\sources\include")
 CreateDirectory("$dir\distfiles")
 CreateDirectory("$dir\build")
-#CreateDirectory("$dir\sources\doc")
+
+if ($add_docs -ne $false) {
+	CreateDirectory("$dir\sources\doc")
+}
 
 # For old include Workaround
 if ($use_old_include_workaround)
@@ -320,7 +332,10 @@ foreach($p in $sfml_platforms)
 		CreateDirectory("$dir\sources\bin\$p\$t\release\lib\")
 
 		Copy-Item "$zip\include\*" "$dir\sources\include\" -Force -Recurse | Out-Null
-		#Copy-Item "$zip\doc\*" "$dir\sources\doc\" -Force -Recurse | Out-Null
+		if ($add_docs -ne $false)
+		{
+			Copy-Item "$zip\doc\*" "$dir\sources\doc\" -Force -Recurse | Out-Null
+		}
 		Move-Item "$zip\bin\sfml-*-d-2.dll" "$dir\sources\bin\$p\$t\debug\bin\" -Force | Out-Null
 		Move-Item "$zip\bin\sfml-*.dll" "$dir\sources\bin\$p\$t\release\bin\" -Force | Out-Null
 		Move-Item "$zip\bin\*.dll" "$dir\sources\ext\bin\$p\" -Force | Out-Null
