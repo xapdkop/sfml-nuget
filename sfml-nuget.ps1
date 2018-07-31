@@ -38,7 +38,7 @@ SFML has official bindings for the C and .Net languages. And thanks to its activ
 $sfml_changelog = "https://www.sfml-dev.org/changelog.php#sfml-$sfml_version"
 
 # Don't change these values
-$dir = Split-Path -Path $MyInvocation.MyCommand.Path
+$dir = Split-Path $MyInvocation.MyCommand.Path
 $coapp_download_url = "http://coapp.org/pages/releases.html"
 $linking = "static", "dynamic"
 $to_msvc = @{ "v100" = "vc10"; "v110" = "vc11"; "v120" = "vc12"; "v140" = "vc14"; "v141" = "vc15" }
@@ -52,9 +52,9 @@ function PackageHeader($pkgName)
 	$currentYear = (Get-Date).Year
 	return "configurations {
 	UserPlatformToolset {
-		// Needed because autopackage lacks VS2015 support
-			key = ""PlatformToolset"";
-			choices: ""v120, v140, v141"";
+	// Needed because autopackage lacks VS2015 support
+		key = ""PlatformToolset"";
+		choices: ""v120, v140, v141"";
 	};
 }
 
@@ -93,12 +93,12 @@ function AddMainFile()
 			foreach($c in $sfml_configurations)
 			{
 				$datas += "		[$p,$v,$c] {"
-				$libfile = "			lib += `${SRC}bin\$p\$v\$c\lib\sfml-main"
+				$libfile = "			lib: { `${SRC}lib\$p\$v\$c\sfml-main"
 				if ($c -eq "debug")
 				{
 					$libfile += "-d"
 				}
-				$libfile += ".lib;"
+				$libfile += ".lib };"
 				$datas += "
 $libfile
 		}
@@ -122,8 +122,8 @@ function AddFiles($pkgName)
 				foreach($l in $linking)
 				{
 					$datas += "		[$p,$v,$c,$l] {"
-					$libfile = "			lib += `${SRC}bin\$p\$v\$c\lib\sfml-$pkgName"
-					$binfile = "			bin += `${SRC}bin\$p\$v\$c\bin\sfml-$pkgName"
+					$libfile = "			lib: { `${SRC}lib\$p\$v\$c\sfml-$pkgName"
+					$binfile = "			bin: { `${SRC}bin\$p\$v\$c\sfml-$pkgName"
 					if ($l -eq "static")
 					{
 						$libfile += "-s"
@@ -133,8 +133,8 @@ function AddFiles($pkgName)
 						$libfile += "-d"
 						$binfile += "-d"
 					}
-					$libfile += ".lib;"
-					$binfile += "-2.dll;"
+					$libfile += ".lib };"
+					$binfile += "-2.dll };"
 					$datas += "
 $libfile"
 
@@ -145,6 +145,7 @@ $binfile"
 					}
 					$datas += "
 		}
+
 "
 				}
 			}
@@ -192,7 +193,7 @@ function GeneratePackage($pkgName)
 	{
 		$autopkg += "		nestedInclude: {
 			#destination = `${d_include}$include_workaround;
-			""`${SRC}include\**""
+			""`${SRC}include\**\*""
 		};
 
 "
@@ -204,28 +205,34 @@ function GeneratePackage($pkgName)
 
 "
 		}
+
 		$autopkg += AddMainFile
 	}
 	$autopkg += AddFiles($pkgName)
-	if($pkgName -eq "system")
+	if ($pkgName -eq "system")
 	{
-		$autopkg += "		[x86] {
-			lib += `${SRC}ext\lib\x86\*.lib;
-			bin += `${SRC}ext\bin\x86\*.dll;
+		foreach ($p in $sfml_platforms)
+		{
+			foreach ($v in $sfml_toolchains)
+			{
+				$autopkg += "		[$p,$v] {
+			lib: { `${SRC}ext\lib\$p\$v\*.lib };
+			bin: { `${SRC}ext\bin\$p\$v\*.dll };
 		}
 
-		[x64] {
-			lib += `${SRC}ext\lib\x64\*.lib;
-			bin += `${SRC}ext\bin\x64\*.dll;
-		}
 "
+			}
+		}
 	}
-	$autopkg += "	};
+	$autopkg = $autopkg.TrimEnd("`r`n")
+	$autopkg += "
+	};
 
 	targets {
 		Defines += HAS_SFML;
+
 		[static]
-			Defines += SFML_STATIC;
+		Defines += SFML_STATIC;
 	}
 }"
 	$autopkg | Out-File "$pkg_prefix$pkgName.autopkg"
@@ -241,14 +248,14 @@ function Unzip
 function CreateDirectory($dirName)
 {
 	if (-not (Test-Path $dirName)){
-		New-Item -ItemType Directory -Force -Path "$dirName" | Out-Null
+		New-Item "$dirName" -ItemType Directory -Force | Out-Null
 	}
 }
 
 function CreateFile($fileName)
 {
 	if (-not (Test-Path $fileName)){
-		New-Item -ItemType File -Force -Path "$fileName" | Out-Null
+		New-Item "$fileName" -ItemType File -Force | Out-Null
 	}
 }
 
@@ -293,9 +300,9 @@ if ($use_old_include_workaround)
 
 foreach($p in $sfml_platforms)
 {
-	foreach ($t in $sfml_toolchains)
+	foreach ($v in $sfml_toolchains)
 	{
-		$filename = "SFML-$sfml_version-windows-" + $to_msvc[$t] + "-" + $to_bits[$p] + "-bit.zip"
+		$filename = "SFML-$sfml_version-windows-" + $to_msvc[$v] + "-" + $to_bits[$p] + "-bit.zip"
 		$outfile = "$dir\distfiles\$filename"
 		if (-not (Test-Path $outfile))
 		{
@@ -324,24 +331,24 @@ foreach($p in $sfml_platforms)
 		Unzip "$outfile" "$dir\temp"
 		$zip = "$dir\temp\SFML-$sfml_version"
 
-		CreateDirectory("$dir\sources\ext\lib\$p\")
-		CreateDirectory("$dir\sources\ext\bin\$p\")
-		CreateDirectory("$dir\sources\bin\$p\$t\debug\bin\")
-		CreateDirectory("$dir\sources\bin\$p\$t\release\bin\")
-		CreateDirectory("$dir\sources\bin\$p\$t\debug\lib\")
-		CreateDirectory("$dir\sources\bin\$p\$t\release\lib\")
+		CreateDirectory("$dir\sources\ext\lib\$p\$v\")
+		CreateDirectory("$dir\sources\ext\bin\$p\$v\")
+		CreateDirectory("$dir\sources\bin\$p\$v\debug\")
+		CreateDirectory("$dir\sources\bin\$p\$v\release\")
+		CreateDirectory("$dir\sources\lib\$p\$v\debug\")
+		CreateDirectory("$dir\sources\lib\$p\$v\release\")
 
 		Copy-Item "$zip\include\*" "$dir\sources\include\" -Force -Recurse | Out-Null
 		if ($add_docs -ne $false)
 		{
 			Copy-Item "$zip\doc\*" "$dir\sources\doc\" -Force -Recurse | Out-Null
 		}
-		Move-Item "$zip\bin\sfml-*-d-2.dll" "$dir\sources\bin\$p\$t\debug\bin\" -Force | Out-Null
-		Move-Item "$zip\bin\sfml-*.dll" "$dir\sources\bin\$p\$t\release\bin\" -Force | Out-Null
-		Move-Item "$zip\bin\*.dll" "$dir\sources\ext\bin\$p\" -Force | Out-Null
-		Move-Item "$zip\lib\sfml-*-d.lib" "$dir\sources\bin\$p\$t\debug\lib\" -Force | Out-Null
-		Move-Item "$zip\lib\sfml-*.lib" "$dir\sources\bin\$p\$t\release\lib\" -Force | Out-Null
-		Move-Item "$zip\lib\*.lib" "$dir\sources\ext\lib\$p\" -Force | Out-Null
+		Move-Item "$zip\bin\sfml-*-d-2.dll" "$dir\sources\bin\$p\$v\debug\" -Force | Out-Null
+		Move-Item "$zip\bin\sfml-*.dll" "$dir\sources\bin\$p\$v\release\" -Force | Out-Null
+		Move-Item "$zip\bin\*.dll" "$dir\sources\ext\bin\$p\$v\" -Force | Out-Null
+		Move-Item "$zip\lib\sfml-*-d.lib" "$dir\sources\lib\$p\$v\debug" -Force | Out-Null
+		Move-Item "$zip\lib\sfml-*.lib" "$dir\sources\lib\$p\$v\release" -Force | Out-Null
+		Move-Item "$zip\lib\*.lib" "$dir\sources\ext\lib\$p\$v\" -Force | Out-Null
 		Remove-Item "$zip" -Recurse | Out-Null
 	}
 }
@@ -349,7 +356,7 @@ foreach($p in $sfml_platforms)
 # New include workaround
 if ($use_old_include_workaround -eq $false)
 {
-	if ((Get-ChildItem -Path "$dir\sources\include\" -File -Force).Count -gt 0)
+	if ((Get-ChildItem "$dir\sources\include\" -File -Force).Count -gt 0)
 	{
 		$include_workaround = ""
 	}
@@ -360,16 +367,16 @@ if ($use_old_include_workaround -eq $false)
 }
 
 Write-Host
-Set-Location -Path "$dir\build"
+Set-Location "$dir\build"
 foreach($module in $sfml_module_list)
 {
 	Write-Host "Generating $pkg_prefix$module.autopkg..."
 	GeneratePackage($module)
 }
-Set-Location -Path ..
+Set-Location ..
 
-New-Item -ItemType Directory -Force -Path "$dir\repository" | Out-Null
-Set-Location -Path "$dir\repository"
+New-Item "$dir\repository" -ItemType Directory -Force | Out-Null
+Set-Location "$dir\repository"
 Get-ChildItem "../build/" -Filter *.autopkg | `
 Foreach-Object{
 	Write-Host "`nGenerating NuGet package from $_...`n"
@@ -380,10 +387,19 @@ Foreach-Object{
 }
 Write-Host "`nCleaning..."
 Remove-Item *.symbols.* | Out-Null
-Set-Location -Path ..
+Set-Location ..
 Remove-Item "$dir\temp" -Recurse | Out-Null
-if ($keep_autopkg -eq $false) { Remove-Item "$dir\build" -Recurse | Out-Null }
-if ($use_old_include_workaround -ne $false) { Remove-Item "$dir\sources\include\delete.me" | Out-Null } # For old include workaround
-if ($keep_sources -ne $true) { Remove-Item "$dir\sources" -Recurse | Out-Null }
+if ($keep_autopkg -eq $false)
+{
+	Remove-Item "$dir\build" -Recurse | Out-Null
+}
+if ($use_old_include_workaround -ne $false)
+{
+	Remove-Item "$dir\sources\include\delete.me" | Out-Null # For old include workaround
+}
+if ($keep_sources -ne $true)
+{
+	Remove-Item "$dir\sources" -Recurse | Out-Null
+}
 Write-Host -ForegroundColor Green "Done! Your packages are available in $dir\repository"
 Pause
