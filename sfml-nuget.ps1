@@ -17,10 +17,12 @@ $sfml_tags = "sfml, native, CoApp" # Tags for your packages, "sfml, native, CoAp
 
 # SFML nuget packages 'generation' variables
 $sfml_module_list = "system", "window", "graphics", "audio", "network" # SFML packages, that will be generated
-$sfml_version = "2.5.0" # Min supported version - 2.2
+$sfml_version = "2.5.0" # SFML version, min supported version - 2.2
 $sfml_platforms = "x86", "x64"
 $sfml_toolchains = "v120", "v140", "v141"
 $sfml_configurations = "debug", "release"
+
+$pkg_version = "$sfml_version" # Packages version. Not to be confused with SFML version!!! For SFML version see above
 
 #########################
 
@@ -62,7 +64,7 @@ nuget {
 	nuspec {
 		id = $pkg_prefix$pkgname;
 		title: $pkg_prefix$pkgname;
-		version: $sfml_version;
+		version: $pkg_version;
 		authors: { $sfml_authors };
 		owners: { $sfml_owners };
 		licenseUrl: ""$sfml_licence_url"";
@@ -164,10 +166,10 @@ function AddDependencies($pkgName)
 
 	dependencies {
 		packages : {"
-	foreach($p in $dependencies[$pkgName])
+	foreach($package in $dependencies[$pkgName])
 	{
 		$datas += "
-			$pkg_prefix$p/$sfml_version,"
+			$pkg_prefix$package/$pkg_version,"
 	}
 	$datas = $datas.TrimEnd(",")
 	$datas += "
@@ -205,7 +207,6 @@ function GeneratePackage($pkgName)
 
 "
 		}
-
 		$autopkg += AddMainFile
 	}
 	$autopkg += AddFiles($pkgName)
