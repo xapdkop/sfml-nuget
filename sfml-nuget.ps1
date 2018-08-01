@@ -10,6 +10,7 @@ $keep_sources = $true # Use $true to keep source files or $false to delete them,
 $keep_autopkg = $false # Keep autopkg files, $false by default
 $use_old_include_workaround = $false # Use in case of errors with the new one, $false by default
 $add_docs = $false # Add docs in system module, $false by default
+$pkg_hotfix = "" # Packages hotfix version, "" by default [means no hotfix]
 
 # SFML packages variables
 $sfml_owners =	"username" # Packages "owner" name. Replace username with your name
@@ -21,8 +22,6 @@ $sfml_version = "2.5.0" # SFML version, min supported version - 2.2
 $sfml_platforms = "x86", "x64"
 $sfml_toolchains = "v120", "v140", "v141"
 $sfml_configurations = "debug", "release"
-
-$pkg_version = "$sfml_version" # Packages version. Not to be confused with SFML version!!! For SFML version see above
 
 #########################
 
@@ -64,7 +63,7 @@ nuget {
 	nuspec {
 		id = $pkg_prefix$pkgname;
 		title: $pkg_prefix$pkgname;
-		version: $pkg_version;
+		version: $sfml_version$pkg_hotfix;
 		authors: { $sfml_authors };
 		owners: { $sfml_owners };
 		licenseUrl: ""$sfml_licence_url"";
@@ -169,7 +168,7 @@ function AddDependencies($pkgName)
 	foreach($package in $dependencies[$pkgName])
 	{
 		$datas += "
-			$pkg_prefix$package/$pkg_version,"
+			$pkg_prefix$package/$sfml_version$pkg_hotfix,"
 	}
 	$datas = $datas.TrimEnd(",")
 	$datas += "
@@ -275,6 +274,15 @@ catch
 	Read-Host "Press ENTER to open CoApp website or Ctrl-C to exit..."
 	Start-Process $coapp_download_url
 	Exit
+}
+
+if ($pkg_hotfix -ne "")
+{
+	$pkg_hotfix = $pkg_hotfix.Insert(0, ".")
+	while (($sfml_version + $pkg_hotfix) -notmatch "^(\d+)\.(\d+)\.(\d+)\.(\d+)$")
+	{
+		$pkg_hotfix = $pkg_hotfix.Insert(0, ".0")
+	}
 }
 
 # For old include workaround

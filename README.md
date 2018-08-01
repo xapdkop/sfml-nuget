@@ -23,7 +23,7 @@ You can customize packages by changing this params:
 - `$keep_autopkg` to keep or delete autopkg files, **false** by default
 - `$use_old_include_workaround` to enable old workaround for include folder in *system* module (you need to manually delete file "delete.me" from include folder in *system* module, use in case of bugs with new one; **false** by default [uses new workaround])
 - `$add_docs` to add the SFML's documentation (it would be added and available only in *system* module), **false** by default
-- `$pkg_version` to change version of generated **packages** (to change SFML version, use $sfml_version!!!), **"$sfml_version"** by default [means equal SFML version]
+- `$pkg_hotfix` to set hotfix version of generated packages (full packages version will be $sfml_version[.0].$pkg_hotfix), **""** by default [empty quotes, means no hotfix]
 - `$sfml_owners` to change packages' owner(s)
 - `$sfml_tags` to customize tags
 - `$sfml_module_list` to choose modules you need
