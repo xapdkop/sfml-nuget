@@ -341,14 +341,14 @@ foreach($p in $sfml_platforms)
 		CreateDirectory("$dir\sources\bin\$p\$v\release\")
 		CreateDirectory("$dir\sources\lib\$p\$v\debug\")
 		CreateDirectory("$dir\sources\lib\$p\$v\release\")
-		CreateDirectory("$dir\sources\docs")
+		CreateDirectory("$dir\sources\docs\")
 
 		Copy-Item "$zip\include\*" "$dir\sources\include\" -Force -Recurse | Out-Null
 		if ($add_docs -ne $false)
 		{
 			Copy-Item "$zip\doc\*" "$dir\sources\docs\" -Force -Recurse | Out-Null
 		}
-		Move-Item -Path (Get-ChildItem "$zip\*" -File -Include "*.txt", "*.md") "$dir\sources\docs" -Force | Out-Null
+		Get-Item "$zip\*" -Include "*.txt","*.md" | Move-Item -Destination "$dir\sources\docs\" -Force | Out-Null
 		Move-Item "$zip\bin\sfml-*-d-2.dll" "$dir\sources\bin\$p\$v\debug\" -Force | Out-Null
 		Move-Item "$zip\bin\sfml-*.dll" "$dir\sources\bin\$p\$v\release\" -Force | Out-Null
 		Move-Item "$zip\bin\*.dll" "$dir\sources\ext\bin\$p\$v\" -Force | Out-Null
