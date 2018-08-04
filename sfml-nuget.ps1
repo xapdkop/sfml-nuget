@@ -198,14 +198,11 @@ function GeneratePackage($pkgName)
 		};
 
 "
-		if ($add_docs -ne $false)
-		{
-			$autopkg += "		docs: {
-			`${SRC}doc\**\*
+		$autopkg += "		docs: {
+			`${SRC}docs\**\*
 		};
 
 "
-		}
 		$autopkg += AddMainFile
 	}
 	$autopkg += AddFiles($pkgName)
@@ -296,10 +293,8 @@ CreateDirectory("$dir\sources")
 CreateDirectory("$dir\sources\include")
 CreateDirectory("$dir\distfiles")
 CreateDirectory("$dir\build")
+CreateDirectory("$dir\sources\docs")
 
-if ($add_docs -ne $false) {
-	CreateDirectory("$dir\sources\doc")
-}
 
 # For old include Workaround
 if ($use_old_include_workaround)
@@ -346,12 +341,14 @@ foreach($p in $sfml_platforms)
 		CreateDirectory("$dir\sources\bin\$p\$v\release\")
 		CreateDirectory("$dir\sources\lib\$p\$v\debug\")
 		CreateDirectory("$dir\sources\lib\$p\$v\release\")
+		CreateDirectory("$dir\sources\docs")
 
 		Copy-Item "$zip\include\*" "$dir\sources\include\" -Force -Recurse | Out-Null
 		if ($add_docs -ne $false)
 		{
-			Copy-Item "$zip\doc\*" "$dir\sources\doc\" -Force -Recurse | Out-Null
+			Copy-Item "$zip\doc\*" "$dir\sources\docs\" -Force -Recurse | Out-Null
 		}
+		Move-Item -Path (Get-ChildItem "$zip\*" -File -Include "*.txt", "*.md") "$dir\sources\docs" -Force | Out-Null
 		Move-Item "$zip\bin\sfml-*-d-2.dll" "$dir\sources\bin\$p\$v\debug\" -Force | Out-Null
 		Move-Item "$zip\bin\sfml-*.dll" "$dir\sources\bin\$p\$v\release\" -Force | Out-Null
 		Move-Item "$zip\bin\*.dll" "$dir\sources\ext\bin\$p\$v\" -Force | Out-Null
