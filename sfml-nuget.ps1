@@ -1,24 +1,25 @@
 #
 # sfml-nuget.ps1
+# v2_2.5.1
 #
 
 #########################
 
 # Some customisation variables
-$pkg_prefix = "sfml." # Prefix of packages. If you change this variable, do not remove the reference to the SFML!!!
+$pkg_prefix = "" # Prefix of packages.
+$pkg_postfix = "" # Postfix of packages.
 $keep_sources = $true # Use $true to keep source files or $false to delete them, $true by default
 $keep_autopkg = $false # Keep autopkg files, $false by default
-$use_old_include_workaround = $false # Use in case of errors with the new one, $false by default
 $add_docs = $false # Add docs in system module, $false by default
 $pkg_hotfix = "" # Packages hotfix version, "" by default [means no hotfix]
 
 # SFML packages variables
 $sfml_owners =	"username" # Packages "owner" name. Replace username with your name
-$sfml_tags = "sfml, native, CoApp" # Tags for your packages, "sfml, native, CoApp" by default
+$sfml_tags = "sfml, C++, graphics, multimedia, games, opengl, audio, native, CoApp" # Tags for your packages, "sfml, C++, graphics, multimedia, games, opengl, audio, native, CoApp" by default
 
 # SFML nuget packages 'generation' variables
 $sfml_module_list = "system", "window", "graphics", "audio", "network" # SFML packages, that will be generated
-$sfml_version = "2.5.0" # SFML version, min supported version - 2.2
+$sfml_version = "2.5.1" # SFML version, min supported version - 2.2
 $sfml_platforms = "x86", "x64"
 $sfml_toolchains = "v120", "v140", "v141"
 $sfml_configurations = "debug", "release"
@@ -45,6 +46,7 @@ $linking = "static", "dynamic"
 $to_msvc = @{ "v100" = "vc10"; "v110" = "vc11"; "v120" = "vc12"; "v140" = "vc14"; "v141" = "vc15" }
 $to_bits = @{ "x86" = "32"; "Win32" = "32" ; "x64" = "64" }
 $dependencies = @{ "window" = "system"; "graphics" = ("window", "system"); "audio" = "system"; "network" = "system" }
+$sfml = "sfml."
 
 #########################
 
@@ -61,8 +63,8 @@ function PackageHeader($pkgName)
 
 nuget {
 	nuspec {
-		id = $pkg_prefix$pkgname;
-		title: $pkg_prefix$pkgname;
+		id = $pkg_prefix$sfml$pkgName$pkg_postfix;
+		title: $pkg_prefix$sfml$pkgName$pkg_postfix;
 		version: $sfml_version$pkg_hotfix;
 		authors: { $sfml_authors };
 		owners: { $sfml_owners };
@@ -168,7 +170,7 @@ function AddDependencies($pkgName)
 	foreach($package in $dependencies[$pkgName])
 	{
 		$datas += "
-			$pkg_prefix$package/$sfml_version$pkg_hotfix,"
+			$pkg_prefix$sfml$package$pkg_postfix/$sfml_version$pkg_hotfix,"
 	}
 	$datas = $datas.TrimEnd(",")
 	$datas += "
@@ -232,7 +234,7 @@ function GeneratePackage($pkgName)
 		Defines += SFML_STATIC;
 	}
 }"
-	$autopkg | Out-File "$pkg_prefix$pkgName.autopkg"
+	$autopkg | Out-File "$pkg_prefix$sfml$pkgName$pkg_postfix.autopkg"
 }
 
 Add-Type -AssemblyName System.IO.Compression.FileSystem
@@ -276,16 +278,10 @@ catch
 if ($pkg_hotfix -ne "")
 {
 	$pkg_hotfix = $pkg_hotfix.Insert(0, ".")
-	while (($sfml_version + $pkg_hotfix) -notmatch "^(\d+)\.(\d+)\.(\d+)\.(\d+)$")
+	if (($sfml_version) -notmatch "^(\d+)\.(\d+)\.(\d+)$")
 	{
 		$pkg_hotfix = $pkg_hotfix.Insert(0, ".0")
 	}
-}
-
-# For old include workaround
-if ($use_old_include_workaround -ne $false)
-{
-	$include_workaround = ""
 }
 
 CreateDirectory("$dir\temp")
@@ -294,13 +290,6 @@ CreateDirectory("$dir\sources\include")
 CreateDirectory("$dir\distfiles")
 CreateDirectory("$dir\build")
 CreateDirectory("$dir\sources\docs")
-
-
-# For old include Workaround
-if ($use_old_include_workaround)
-{
-	CreateFile("$dir\sources\include\delete.me")
-}
 
 foreach($p in $sfml_platforms)
 {
@@ -331,7 +320,7 @@ foreach($p in $sfml_platforms)
 			}
 		}
 		Write-Host "`nExtracting $filename..."
-		Remove-Item "$dir\temp\*" -Recurse | Out-Null # Clearing directory to avoid Unzip exceptions
+		Remove-Item "$dir\temp\" -Recurse | Out-Null # Clearing directory to avoid Unzip exceptions
 		Unzip "$outfile" "$dir\temp"
 		$zip = "$dir\temp\SFML-$sfml_version"
 
@@ -359,24 +348,20 @@ foreach($p in $sfml_platforms)
 	}
 }
 
-# New include workaround
-if ($use_old_include_workaround -eq $false)
+if ((Get-ChildItem "$dir\sources\include\" -File -Force).Count -gt 0)
 {
-	if ((Get-ChildItem "$dir\sources\include\" -File -Force).Count -gt 0)
-	{
-		$include_workaround = ""
-	}
-	else
-	{
-		$include_workaround = "SFML\"
-	}
+	$include_workaround = ""
+}
+else
+{
+	$include_workaround = "SFML\"
 }
 
 Write-Host
 Set-Location "$dir\build"
 foreach($module in $sfml_module_list)
 {
-	Write-Host "Generating $pkg_prefix$module.autopkg..."
+	Write-Host "Generating $pkg_prefix$sfml$module$pkg_postfix.autopkg..."
 	GeneratePackage($module)
 }
 Set-Location ..
@@ -398,10 +383,6 @@ Remove-Item "$dir\temp" -Recurse | Out-Null
 if ($keep_autopkg -eq $false)
 {
 	Remove-Item "$dir\build" -Recurse | Out-Null
-}
-if ($use_old_include_workaround -ne $false)
-{
-	Remove-Item "$dir\sources\include\delete.me" | Out-Null # For old include workaround
 }
 if ($keep_sources -ne $true)
 {

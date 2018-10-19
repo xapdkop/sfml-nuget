@@ -1,4 +1,5 @@
 # SFML-nuget_builder
+
 PowerShell script to generate NuGet packages for SFML.
 
 ### You can download pre-generated packages [here](https://github.com/xapdkop/sfml-nuget) (look in [releases](https://github.com/xapdkop/sfml-nuget/releases))
@@ -18,7 +19,8 @@ Also you can customize script if you want.
 # Customization
 
 You can customize packages by changing this params:
-- `$pkg_prefix` to change packages' names **(Don't remove the reference to the SFML!)**
+- `$pkg_prefix` to change packages' prefix
+- `$pkg_postfix` to change packages' postfix
 - `$keep_sources` to keep or delete source files, **true** by default
 - `$keep_autopkg` to keep or delete autopkg files, **false** by default
 - `$use_old_include_workaround` to enable old workaround for include folder in *system* module (you need to manually delete file "delete.me" from include folder in *system* module, use in case of bugs with new one; **false** by default [uses new workaround])
